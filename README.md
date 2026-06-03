@@ -2,7 +2,6 @@ En:
 
 "(M-S) Messages Spammer" is a program for automatically sending text messages
 
-----
 
 Disclaimer of liability:
 The program is created for review and personal use only.
@@ -20,7 +19,6 @@ Ru:
 
 "(M-S) Messages Spammer" - Программа для автоматической отправки текстовых сообщений
 
-----
 
 Отказ от ответственности:
 Программа создана только для ознакомления и личного использования
