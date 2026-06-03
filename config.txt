@@ -1,0 +1,7 @@
+lang=ru
+theme=dark
+start_key=f1
+stop_key=f2
+limit=0
+smooth_theme=1
+always_on_top=0
