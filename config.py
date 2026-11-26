@@ -39,8 +39,8 @@ TEXTS = {
         'status_stop': 'Stopped',
         'counter': 'Sent: {} / {}',
         'warn': 'Click on input',
-        'err_empty': 'Error: Enter spam text', 
-        'err_delay': 'Error: Delay field cannot be empty', 
+        'err_empty': 'Error: Enter spam text',
+        'err_delay': 'Error: Delay field cannot be empty',
         'err_limit': 'Error: Limit field cannot be empty',
         'err_hk': 'Hotkey registration failed! Run as admin if needed.',
         'sett_title': ' Settings ',
@@ -64,8 +64,8 @@ TEXTS = {
         'status_stop': 'Остановлен',
         'counter': 'Отправлено: {} / {}',
         'warn': 'Кликни в поле ввода',
-        'err_empty': 'Ошибка: Введите текст для отправки', 
-        'err_delay': 'Ошибка: Поле задержки не может быть пустым', 
+        'err_empty': 'Ошибка: Введите текст для отправки',
+        'err_delay': 'Ошибка: Поле задержки не может быть пустым',
         'err_limit': 'Ошибка: Поле лимита не может быть пустым',
         'err_hk': 'Ошибка горячих клавиш! Запустите от имени админа.',
         'sett_title': ' Настройки ',
@@ -73,6 +73,16 @@ TEXTS = {
         'sett_ontop': 'Поверх всех окон'
     }
 }
+
+
+def _normalize_non_negative_int(value: str) -> str | None:
+    """Возвращает нормализованную строку с числом (без ведущих нулей),
+    либо None, если значение не является неотрицательным целым."""
+    if not value.isdigit():
+        return None
+    # "005" -> "5", "000" -> "0"
+    return str(int(value))
+
 
 def validate_config(cfg):
     repaired = False
@@ -86,22 +96,28 @@ def validate_config(cfg):
             cfg[key] = default_val
             repaired = True
 
-        if key == 'limit':
-            if not cfg[key].isdigit():
+        # limit и delay — только неотрицательные целые, без ведущих нулей
+        if key in ('limit', 'delay'):
+            normalized = _normalize_non_negative_int(cfg[key])
+            if normalized is None:
                 cfg[key] = default_val
                 repaired = True
+            elif normalized != cfg[key]:
+                cfg[key] = normalized
+                repaired = True
 
-        if key in ['start_key', 'stop_key']:
+        if key in ('start_key', 'stop_key'):
             if not isinstance(cfg[key], str) or not cfg[key].strip():
                 cfg[key] = default_val
                 repaired = True
 
     return cfg, repaired
 
+
 def load_settings():
     cfg = DEFAULT_CONFIG.copy()
     need_save = False
-    
+
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
@@ -115,11 +131,12 @@ def load_settings():
         need_save = True
 
     cfg, repaired = validate_config(cfg)
-    
+
     if need_save or repaired:
         save_settings(cfg)
 
     return cfg
+
 
 def save_settings(cfg):
     try:

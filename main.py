@@ -24,6 +24,7 @@ class App(ctk.CTk):
         self.resizable(False, False)
         self.attributes("-topmost", self.cfg.get('always_on_top', '0') == '1')
 
+        self._is_fading = False  # флаг активной анимации темы
         self.hotkey_listener = None
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -37,12 +38,15 @@ class App(ctk.CTk):
 
         self.core = SpammerCore(self.update_counter_ui, self.spam_finished_ui, self.update_status_ui)
 
+        # Критичные для работы приложения модули.
+        # Emergency Stop.bat — вспомогательный скрипт, его отсутствие не ломает
+        # работающее приложение, поэтому в watchlist не входит.
+        # config.txt / app.pid — генерируются автоматически, тоже не критичны.
         required_files = [
             os.path.join(base_dir, "spammer.py"),
             os.path.join(base_dir, "config.py"),
-            os.path.join(base_dir, "Emergency Stop.bat"),
         ]
-        self.watchdog = SystemWatchdog(required_files, heartbeat_check_func=True)
+        self.watchdog = SystemWatchdog(required_files, heartbeat_check=True)
         self.watchdog.start()
 
         self.init_ui()
@@ -54,6 +58,8 @@ class App(ctk.CTk):
             self.watchdog.ping_heartbeat()
         self.after(1000, self.start_heartbeat_loop)
 
+    # ---------------------------------------------------------------- UI
+
     def init_ui(self):
         lang = self.cfg.get('lang', 'en')
         t = config.TEXTS[lang]
@@ -62,10 +68,15 @@ class App(ctk.CTk):
         self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.top_frame.pack(fill="x", padx=20, pady=(15, 0))
 
-        self.btn_lang = ctk.CTkButton(self.top_frame, text="RU" if lang == "en" else "EN", width=60, command=self.toggle_lang)
+        self.btn_lang = ctk.CTkButton(self.top_frame, text="RU" if lang == "en" else "EN",
+                                      width=60, command=self.toggle_lang)
         self.btn_lang.pack(side="left")
 
-        self.btn_theme = ctk.CTkButton(self.top_frame, text="🌙" if self.cfg.get('theme', 'dark') == "light" else "☀️", width=60, command=self.toggle_theme)
+        self.btn_theme = ctk.CTkButton(
+            self.top_frame,
+            text="🌙" if self.cfg.get('theme', 'dark') == "light" else "☀️",
+            width=60, command=self.toggle_theme,
+        )
         self.btn_theme.pack(side="left", padx=10)
 
         # --- spam text ---
@@ -80,7 +91,8 @@ class App(ctk.CTk):
         if self.cfg.get('spam_text'):
             self.txt_entry.insert("1.0", self.cfg.get('spam_text', ''))
 
-        self.btn_paste = ctk.CTkButton(self.f_entry, text=t['paste'], width=70, command=self.paste_text)
+        self.btn_paste = ctk.CTkButton(self.f_entry, text=t['paste'], width=70,
+                                       command=self.paste_text)
         self.btn_paste.pack(side="right", padx=(5, 0), anchor="n")
 
         # --- delay ---
@@ -119,18 +131,21 @@ class App(ctk.CTk):
         self.f_sett = ctk.CTkFrame(self)
         self.f_sett.pack(fill="x", padx=20, pady=5, ipady=3)
 
-        self.lbl_sett_title = ctk.CTkLabel(self.f_sett, text=t['sett_title'], font=("Arial", 12, "bold"))
+        self.lbl_sett_title = ctk.CTkLabel(self.f_sett, text=t['sett_title'],
+                                           font=("Arial", 12, "bold"))
         self.lbl_sett_title.pack(anchor="w", padx=10, pady=2)
 
         self.f_sett_inner = ctk.CTkFrame(self.f_sett, fg_color="transparent")
         self.f_sett_inner.pack(fill="x", padx=10, pady=2)
 
-        self.switch_smooth = ctk.CTkSwitch(self.f_sett_inner, text=t['sett_smooth'], command=self.toggle_smooth_cfg)
+        self.switch_smooth = ctk.CTkSwitch(self.f_sett_inner, text=t['sett_smooth'],
+                                           command=self.toggle_smooth_cfg)
         self.switch_smooth.pack(side="left", padx=5)
         if self.cfg.get('smooth_theme', '1') == '1':
             self.switch_smooth.select()
 
-        self.switch_ontop = ctk.CTkSwitch(self.f_sett_inner, text=t['sett_ontop'], command=self.toggle_ontop)
+        self.switch_ontop = ctk.CTkSwitch(self.f_sett_inner, text=t['sett_ontop'],
+                                          command=self.toggle_ontop)
         self.switch_ontop.pack(side="left", padx=20)
         if self.cfg.get('always_on_top', '0') == '1':
             self.switch_ontop.select()
@@ -139,7 +154,8 @@ class App(ctk.CTk):
         self.f_hk = ctk.CTkFrame(self)
         self.f_hk.pack(fill="x", padx=20, pady=5, ipady=3)
 
-        self.lbl_hk_title = ctk.CTkLabel(self.f_hk, text=t['hk_title'], font=("Arial", 12, "bold"))
+        self.lbl_hk_title = ctk.CTkLabel(self.f_hk, text=t['hk_title'],
+                                         font=("Arial", 12, "bold"))
         self.lbl_hk_title.grid(row=0, column=0, columnspan=5, padx=10, pady=2, sticky="w")
 
         self.lbl_hk_s = ctk.CTkLabel(self.f_hk, text=t['hk_start'])
@@ -154,21 +170,27 @@ class App(ctk.CTk):
         self.ent_hk_stop.insert(0, self.cfg.get('stop_key', 'f2'))
         self.ent_hk_stop.grid(row=1, column=3, pady=2)
 
-        self.btn_hk_upd = ctk.CTkButton(self.f_hk, text=t['hk_btn'], width=90, command=self.action_update_hk)
+        self.btn_hk_upd = ctk.CTkButton(self.f_hk, text=t['hk_btn'], width=90,
+                                        command=self.action_update_hk)
         self.btn_hk_upd.grid(row=1, column=4, padx=20, pady=2)
 
         # --- status ---
-        self.lbl_inline_err = ctk.CTkLabel(self, text="", text_color="#dc3545", font=("Arial", 12, "bold"))
+        self.lbl_inline_err = ctk.CTkLabel(self, text="", text_color="#dc3545",
+                                           font=("Arial", 12, "bold"))
         self.lbl_inline_err.pack(pady=(2, 0))
 
-        self.lbl_status = ctk.CTkLabel(self, text=t['status_idle'], text_color="#ffc107", font=("Arial", 13, "bold"))
+        self.lbl_status = ctk.CTkLabel(self, text=t['status_idle'],
+                                       text_color="#ffc107", font=("Arial", 13, "bold"))
         self.lbl_status.pack()
-        self.lbl_counter = ctk.CTkLabel(self, text=t['counter'].format(0, self.cfg.get('limit', '0')))
+        self.lbl_counter = ctk.CTkLabel(
+            self, text=t['counter'].format(0, self.cfg.get('limit', '0'))
+        )
         self.lbl_counter.pack()
-        self.lbl_warn = ctk.CTkLabel(self, text=t['warn'], text_color="#ffc107", font=("Arial", 11))
+        self.lbl_warn = ctk.CTkLabel(self, text=t['warn'], text_color="#ffc107",
+                                     font=("Arial", 11))
         self.lbl_warn.pack(pady=5)
 
-    # ---------- helpers ----------
+    # ---------------------------------------------------------------- helpers
 
     def paste_text(self):
         self.txt_entry.delete("1.0", "end")
@@ -185,12 +207,25 @@ class App(ctk.CTk):
             return "+".join(f"<{p}>" if len(p) > 1 else p for p in parts)
         return f"<{k}>" if len(k) > 1 else k
 
+    @staticmethod
+    def _is_valid_hotkey(parsed: str) -> bool:
+        """Проверяет, что pynput сможет распарсить строку.
+        Никаких слушателей не поднимаем — только парсинг."""
+        if not parsed:
+            return False
+        try:
+            canonical = keyboard.HotKey.parse(parsed)
+        except (ValueError, KeyError):
+            return False
+        return bool(canonical)
+
     def hook_keys(self):
         if self.hotkey_listener:
             try:
                 self.hotkey_listener.stop()
             except Exception:
                 pass
+            self.hotkey_listener = None
 
         s_key = self.parse_hotkey(self.cfg.get('start_key', 'f1'))
         t_key = self.parse_hotkey(self.cfg.get('stop_key', 'f2'))
@@ -203,9 +238,11 @@ class App(ctk.CTk):
             self.hotkey_listener = keyboard.GlobalHotKeys(hotkeys)
             self.hotkey_listener.start()
         except Exception:
-            self.lbl_inline_err.configure(text=config.TEXTS[self.cfg['lang']]['err_hk'])
+            self.lbl_inline_err.configure(
+                text=config.TEXTS[self.cfg['lang']]['err_hk']
+            )
 
-    # ---------- toggles ----------
+    # ---------------------------------------------------------------- toggles
 
     def toggle_smooth_cfg(self):
         self.cfg['smooth_theme'] = '1' if self.switch_smooth.get() else '0'
@@ -218,11 +255,17 @@ class App(ctk.CTk):
         self.attributes("-topmost", val == '1')
 
     def toggle_theme(self):
+        # Пока идёт анимация — игнорируем повторные клики,
+        # иначе параллельные цепочки after() будут дёргать alpha.
+        if self._is_fading:
+            return
+
         self.cfg['theme'] = 'dark' if self.cfg.get('theme', 'dark') == 'light' else 'light'
         config.save_settings(self.cfg)
         self.btn_theme.configure(text="🌙" if self.cfg['theme'] == "light" else "☀️")
 
         if self.cfg.get('smooth_theme', '1') == '1':
+            self._is_fading = True
             self.fade_out_theme(1.0)
         else:
             ctk.set_appearance_mode(self.cfg['theme'])
@@ -245,6 +288,7 @@ class App(ctk.CTk):
             self.after(16, lambda: self.fade_in_theme(alpha))
         else:
             self.attributes("-alpha", 1.0)
+            self._is_fading = False
 
     def toggle_lang(self):
         self.cfg['lang'] = 'ru' if self.cfg.get('lang', 'en') == 'en' else 'en'
@@ -266,8 +310,12 @@ class App(ctk.CTk):
         else:
             self.lbl_status.configure(text=t['status_idle'])
 
-        self.btn_start.configure(text=t['start'].format(self.cfg.get('start_key', 'f1').upper()))
-        self.btn_stop.configure(text=t['stop'].format(self.cfg.get('stop_key', 'f2').upper()))
+        self.btn_start.configure(
+            text=t['start'].format(self.cfg.get('start_key', 'f1').upper())
+        )
+        self.btn_stop.configure(
+            text=t['stop'].format(self.cfg.get('stop_key', 'f2').upper())
+        )
 
         self.lbl_sett_title.configure(text=t['sett_title'])
         self.switch_smooth.configure(text=t['sett_smooth'])
@@ -277,10 +325,12 @@ class App(ctk.CTk):
         self.lbl_hk_s.configure(text=t['hk_start'])
         self.lbl_hk_t.configure(text=t['hk_stop'])
         self.btn_hk_upd.configure(text=t['hk_btn'])
-        self.lbl_counter.configure(text=t['counter'].format(self.core.msg_count, self.cfg.get('limit', '0')))
+        self.lbl_counter.configure(
+            text=t['counter'].format(self.core.msg_count, self.cfg.get('limit', '0'))
+        )
         self.lbl_warn.configure(text=t['warn'])
 
-    # ---------- actions ----------
+    # ---------------------------------------------------------------- actions
 
     def action_update_hk(self):
         sk = self.ent_hk_start.get().strip().lower()
@@ -291,14 +341,11 @@ class App(ctk.CTk):
             self.lbl_inline_err.configure(text=config.TEXTS[self.cfg['lang']]['err_hk'])
             return
 
-        try:
-            test = keyboard.GlobalHotKeys({
-                self.parse_hotkey(sk): lambda: None,
-                self.parse_hotkey(tk_): lambda: None,
-            })
-            test.start()
-            test.stop()
-        except Exception:
+        ps = self.parse_hotkey(sk)
+        pt = self.parse_hotkey(tk_)
+
+        # Валидация без создания слушателя — просто парсинг строки.
+        if not self._is_valid_hotkey(ps) or not self._is_valid_hotkey(pt):
             self.lbl_inline_err.configure(text=config.TEXTS[self.cfg['lang']]['err_hk'])
             return
 
@@ -307,8 +354,12 @@ class App(ctk.CTk):
         config.save_settings(self.cfg)
         self.hook_keys()
         self.lbl_inline_err.configure(text="")
-        self.btn_start.configure(text=config.TEXTS[self.cfg['lang']]['start'].format(sk.upper()))
-        self.btn_stop.configure(text=config.TEXTS[self.cfg['lang']]['stop'].format(tk_.upper()))
+        self.btn_start.configure(
+            text=config.TEXTS[self.cfg['lang']]['start'].format(sk.upper())
+        )
+        self.btn_stop.configure(
+            text=config.TEXTS[self.cfg['lang']]['stop'].format(tk_.upper())
+        )
 
     def action_start(self):
         if self.core.is_running:
@@ -316,19 +367,29 @@ class App(ctk.CTk):
 
         text = self.txt_entry.get("1.0", "end-1c")
         if not text.strip():
-            self.lbl_inline_err.configure(text=config.TEXTS[self.cfg['lang']]['err_empty'])
+            self.lbl_inline_err.configure(
+                text=config.TEXTS[self.cfg['lang']]['err_empty']
+            )
             return
 
         try:
             delay = int(self.delay_entry.get())
+            if delay < 0:
+                raise ValueError
         except ValueError:
-            self.lbl_inline_err.configure(text=config.TEXTS[self.cfg['lang']]['err_delay'])
+            self.lbl_inline_err.configure(
+                text=config.TEXTS[self.cfg['lang']]['err_delay']
+            )
             return
 
         try:
             limit = int(self.limit_entry.get())
+            if limit < 0:
+                raise ValueError
         except ValueError:
-            self.lbl_inline_err.configure(text=config.TEXTS[self.cfg['lang']]['err_limit'])
+            self.lbl_inline_err.configure(
+                text=config.TEXTS[self.cfg['lang']]['err_limit']
+            )
             return
 
         self.lbl_inline_err.configure(text="")
@@ -345,7 +406,7 @@ class App(ctk.CTk):
     def action_stop(self):
         self.core.stop()
 
-    # ---------- callbacks ----------
+    # ---------------------------------------------------------------- callbacks
 
     def update_status_ui(self, status_type, val):
         t = config.TEXTS[self.cfg['lang']]
@@ -360,7 +421,9 @@ class App(ctk.CTk):
 
     def update_counter_ui(self, count):
         self.after(0, lambda: self.lbl_counter.configure(
-            text=config.TEXTS[self.cfg['lang']]['counter'].format(count, self.cfg.get('limit', '0'))
+            text=config.TEXTS[self.cfg['lang']]['counter'].format(
+                count, self.cfg.get('limit', '0')
+            )
         ))
 
     def spam_finished_ui(self):
@@ -368,7 +431,8 @@ class App(ctk.CTk):
             self.btn_start.configure(state="normal"),
             self.btn_stop.configure(state="disabled"),
             self.lbl_status.configure(
-                text=config.TEXTS[self.cfg['lang']]['status_stop'], text_color="#dc3545"
+                text=config.TEXTS[self.cfg['lang']]['status_stop'],
+                text_color="#dc3545",
             ),
         ])
 
