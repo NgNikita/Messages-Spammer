@@ -1,4 +1,5 @@
  (M-S) Messages Spammer
+ ------------------------------------------------------------
  Quick Start / End-User Notice / Disclaimer / Terms of Use
  Plain-text README
 ============================================================
