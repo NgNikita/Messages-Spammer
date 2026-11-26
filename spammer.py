@@ -14,7 +14,7 @@ class SpammerCore:
         self.status_update = status_callback
 
         self.keyboard = Controller()
-        self.v_key = KeyCode.from_vk(0x56)  # V
+        self.v_key = KeyCode.from_vk(0x56)
 
     @property
     def is_running(self) -> bool:
@@ -47,7 +47,6 @@ class SpammerCore:
             pass
 
         try:
-            # Countdown 3..1 — Event.wait вместо sleep → мгновенный стоп
             for i in (3, 2, 1):
                 if self._stop_event.is_set():
                     return
@@ -57,11 +56,6 @@ class SpammerCore:
 
             self.status_update('work', None)
 
-            # Каждая непустая строка отправляется отдельным сообщением.
-            # Пустые строки намеренно пропускаются, иначе в чат уходили бы
-            # пустые сообщения (просто нажатия Enter). Если нужен перенос
-            # внутри одного сообщения — используйте Shift+Enter вручную
-            # или отправляйте весь текст одной строкой.
             lines = [ln for ln in text.split('\n') if ln.strip()]
 
             while not self._stop_event.is_set():

@@ -24,7 +24,7 @@ class App(ctk.CTk):
         self.resizable(False, False)
         self.attributes("-topmost", self.cfg.get('always_on_top', '0') == '1')
 
-        self._is_fading = False  # флаг активной анимации темы
+        self._is_fading = False
         self.hotkey_listener = None
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -38,10 +38,6 @@ class App(ctk.CTk):
 
         self.core = SpammerCore(self.update_counter_ui, self.spam_finished_ui, self.update_status_ui)
 
-        # Критичные для работы приложения модули.
-        # Emergency Stop.bat — вспомогательный скрипт, его отсутствие не ломает
-        # работающее приложение, поэтому в watchlist не входит.
-        # config.txt / app.pid — генерируются автоматически, тоже не критичны.
         required_files = [
             os.path.join(base_dir, "spammer.py"),
             os.path.join(base_dir, "config.py"),
@@ -58,13 +54,10 @@ class App(ctk.CTk):
             self.watchdog.ping_heartbeat()
         self.after(1000, self.start_heartbeat_loop)
 
-    # ---------------------------------------------------------------- UI
-
     def init_ui(self):
         lang = self.cfg.get('lang', 'en')
         t = config.TEXTS[lang]
 
-        # --- top ---
         self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.top_frame.pack(fill="x", padx=20, pady=(15, 0))
 
@@ -79,7 +72,6 @@ class App(ctk.CTk):
         )
         self.btn_theme.pack(side="left", padx=10)
 
-        # --- spam text ---
         self.lbl_spam = ctk.CTkLabel(self, text=t['spam_lbl'])
         self.lbl_spam.pack(anchor="w", padx=20, pady=(10, 0))
 
@@ -95,21 +87,18 @@ class App(ctk.CTk):
                                        command=self.paste_text)
         self.btn_paste.pack(side="right", padx=(5, 0), anchor="n")
 
-        # --- delay ---
         self.lbl_delay = ctk.CTkLabel(self, text=t['delay_lbl'])
         self.lbl_delay.pack(anchor="w", padx=20, pady=(5, 0))
         self.delay_entry = ctk.CTkEntry(self)
         self.delay_entry.insert(0, self.cfg.get('delay', '1000'))
         self.delay_entry.pack(fill="x", padx=20, pady=2)
 
-        # --- limit ---
         self.lbl_limit = ctk.CTkLabel(self, text=t['limit_lbl'])
         self.lbl_limit.pack(anchor="w", padx=20, pady=(5, 0))
         self.limit_entry = ctk.CTkEntry(self)
         self.limit_entry.insert(0, self.cfg.get('limit', '0'))
         self.limit_entry.pack(fill="x", padx=20, pady=2)
 
-        # --- start / stop ---
         self.f_control = ctk.CTkFrame(self, fg_color="transparent")
         self.f_control.pack(pady=10)
         self.btn_start = ctk.CTkButton(
@@ -127,7 +116,6 @@ class App(ctk.CTk):
         )
         self.btn_stop.pack(side="left", padx=10)
 
-        # --- settings ---
         self.f_sett = ctk.CTkFrame(self)
         self.f_sett.pack(fill="x", padx=20, pady=5, ipady=3)
 
@@ -150,7 +138,6 @@ class App(ctk.CTk):
         if self.cfg.get('always_on_top', '0') == '1':
             self.switch_ontop.select()
 
-        # --- hotkeys ---
         self.f_hk = ctk.CTkFrame(self)
         self.f_hk.pack(fill="x", padx=20, pady=5, ipady=3)
 
@@ -174,7 +161,6 @@ class App(ctk.CTk):
                                         command=self.action_update_hk)
         self.btn_hk_upd.grid(row=1, column=4, padx=20, pady=2)
 
-        # --- status ---
         self.lbl_inline_err = ctk.CTkLabel(self, text="", text_color="#dc3545",
                                            font=("Arial", 12, "bold"))
         self.lbl_inline_err.pack(pady=(2, 0))
@@ -189,8 +175,6 @@ class App(ctk.CTk):
         self.lbl_warn = ctk.CTkLabel(self, text=t['warn'], text_color="#ffc107",
                                      font=("Arial", 11))
         self.lbl_warn.pack(pady=5)
-
-    # ---------------------------------------------------------------- helpers
 
     def paste_text(self):
         self.txt_entry.delete("1.0", "end")
@@ -209,8 +193,6 @@ class App(ctk.CTk):
 
     @staticmethod
     def _is_valid_hotkey(parsed: str) -> bool:
-        """Проверяет, что pynput сможет распарсить строку.
-        Никаких слушателей не поднимаем — только парсинг."""
         if not parsed:
             return False
         try:
@@ -242,8 +224,6 @@ class App(ctk.CTk):
                 text=config.TEXTS[self.cfg['lang']]['err_hk']
             )
 
-    # ---------------------------------------------------------------- toggles
-
     def toggle_smooth_cfg(self):
         self.cfg['smooth_theme'] = '1' if self.switch_smooth.get() else '0'
         config.save_settings(self.cfg)
@@ -255,8 +235,6 @@ class App(ctk.CTk):
         self.attributes("-topmost", val == '1')
 
     def toggle_theme(self):
-        # Пока идёт анимация — игнорируем повторные клики,
-        # иначе параллельные цепочки after() будут дёргать alpha.
         if self._is_fading:
             return
 
@@ -330,8 +308,6 @@ class App(ctk.CTk):
         )
         self.lbl_warn.configure(text=t['warn'])
 
-    # ---------------------------------------------------------------- actions
-
     def action_update_hk(self):
         sk = self.ent_hk_start.get().strip().lower()
         tk_ = self.ent_hk_stop.get().strip().lower()
@@ -344,7 +320,6 @@ class App(ctk.CTk):
         ps = self.parse_hotkey(sk)
         pt = self.parse_hotkey(tk_)
 
-        # Валидация без создания слушателя — просто парсинг строки.
         if not self._is_valid_hotkey(ps) or not self._is_valid_hotkey(pt):
             self.lbl_inline_err.configure(text=config.TEXTS[self.cfg['lang']]['err_hk'])
             return
@@ -405,8 +380,6 @@ class App(ctk.CTk):
 
     def action_stop(self):
         self.core.stop()
-
-    # ---------------------------------------------------------------- callbacks
 
     def update_status_ui(self, status_type, val):
         t = config.TEXTS[self.cfg['lang']]

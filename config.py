@@ -76,11 +76,8 @@ TEXTS = {
 
 
 def _normalize_non_negative_int(value: str) -> str | None:
-    """Возвращает нормализованную строку с числом (без ведущих нулей),
-    либо None, если значение не является неотрицательным целым."""
     if not value.isdigit():
         return None
-    # "005" -> "5", "000" -> "0"
     return str(int(value))
 
 
@@ -96,7 +93,6 @@ def validate_config(cfg):
             cfg[key] = default_val
             repaired = True
 
-        # limit и delay — только неотрицательные целые, без ведущих нулей
         if key in ('limit', 'delay'):
             normalized = _normalize_non_negative_int(cfg[key])
             if normalized is None:
