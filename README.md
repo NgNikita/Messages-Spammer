@@ -1,8 +1,7 @@
-============================================================
- (M-S) Messages Spammer
- End-User Notice / Disclaimer / Terms of Use
- Plain-text README
-============================================================
+(M-S) Messages Spammer
+End-User Notice / Disclaimer / Terms of Use
+Plain-text README
+
 
 
 ------------------------------------------------------------
