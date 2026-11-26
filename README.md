@@ -1,12 +1,25 @@
-(M-S) Messages Spammer
-End-User Notice / Disclaimer / Terms of Use
-Plain-text README
-
+ (M-S) Messages Spammer
+ Quick Start / End-User Notice / Disclaimer / Terms of Use
+ Plain-text README
+============================================================
 
 
 ------------------------------------------------------------
 EN - ENGLISH
 ------------------------------------------------------------
+
+0. QUICK START
+------------------------------------------------------------
+  - Run START.bat to install dependencies (customtkinter,
+    pynput, pyperclip) and launch the app, or run main.py
+    directly with Python.
+  - Enter text, delay (ms), and message limit (0 = unlimited),
+    focus the target input field, then press Start or the
+    start hotkey (default: F1).
+  - Stop anytime via the Stop button, the stop hotkey
+    (default: F2), or Emergency Stop.bat.
+  - Settings are saved automatically to config.txt.
+
 
 1. WHAT THIS PROGRAM IS
 ------------------------------------------------------------
@@ -111,7 +124,7 @@ By using this program you confirm that:
   - you are of legal age in your jurisdiction, or have the
     consent of a parent or legal guardian;
   - you have the legal capacity to enter into this notice;
-  - you have read and understood it in full.
+    - you have read and understood it in full.
 
 If you do not agree with any part of this notice, do not use
 the program and delete it from your device.
@@ -161,6 +174,20 @@ agreed to all of the above.
 RU - РУССКИЙ
 ------------------------------------------------------------
 
+0. БЫСТРЫЙ СТАРТ
+------------------------------------------------------------
+  - Запустите START.bat для установки зависимостей
+    (customtkinter, pynput, pyperclip) и запуска приложения
+    либо запустите main.py напрямую через Python.
+  - Введите текст, задержку (мс) и лимит сообщений
+    (0 = безлимит), кликните в нужное поле ввода и нажмите
+    «Старт» или горячую клавишу запуска (по умолчанию F1).
+  - Остановить отправку можно кнопкой «Стоп», горячей
+    клавишей остановки (по умолчанию F2) или через
+    Emergency Stop.bat.
+  - Настройки автоматически сохраняются в config.txt.
+
+
 1. ЧТО ЭТО ЗА ПРОГРАММА
 ------------------------------------------------------------
 "(M-S) Messages Spammer" - локальная настольная утилита,
@@ -208,8 +235,8 @@ RU - РУССКИЙ
 
 Слово "Spammer" в названии описывает техническую функцию
 (автоматизированный повторяющийся ввод текста) и не является
-одобрением злоупотреблений. Вся ответственность за misuse
-лежит на пользователе.
+одобрением злоупотреблений. Вся ответственность за
+злоупотребление лежит на пользователе.
 
 
 3. ОТСУТСТВИЕ ГАРАНТИЙ
@@ -267,8 +294,8 @@ RU - РУССКИЙ
 Вы обязуетесь возместить автору и оградить его от любых
 претензий, требований, убытков, потерь и расходов (включая
 разумные судебные издержки), возникших из-за вашего
-использования или misuse программы либо нарушения этого
-уведомления.
+использования или неправомерного использования программы
+либо нарушения этого уведомления.
 
 
 6. ПРАВОСПОСОБНОСТЬ
